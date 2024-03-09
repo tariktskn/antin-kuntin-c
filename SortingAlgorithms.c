@@ -5,6 +5,7 @@
 int* setArray(int N);
 void printArray(int* array, int N);
 void shuffle(int* array, int N);
+void primalShuffle(int array[], int N);
 void swap(int* x, int* y);
 void freeArray(int *array);
 void bubbleSort(int *array, int N);
@@ -165,6 +166,19 @@ void printArray(int* array, int N){
 }
 
 void shuffle(int array[], int N){
+	srand(time(NULL));
+	int index, temp;
+		
+	int i;
+	for(i=N-1;i>0;i--){
+		index = rand()%i;
+		temp = array[i];
+		array[i] = array[index];
+		array[index] = temp;
+	}
+}
+
+void primalShuffle(int array[], int N){
 	srand(time(NULL));
 	int rand1, rand2, temp, i;
 	

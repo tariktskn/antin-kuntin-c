@@ -14,18 +14,64 @@ void insertionSort(int* array, int N);
 void mergeSort(int *array, int N);
 void merge(int *leftArray, int *rightArray, int *array, int N);
 void doMergeSort(int *array, int N);
+void heapify(int* array, int N, int i);
+void heapSort(int* array, int N);
 // quick 
 
 int main(){
 	int N = 10;
 	int* array = setArray(N);
+	
+	srand(time(NULL));
+	
 	bubbleSort(array, N);
 	selectionSort(array, N);
 	insertionSort(array, N);
 	doMergeSort(array, N);
+	heapSort(array, N);
 	
 	freeArray(array);
 	return 0;
+}
+
+void heapify(int* array, int N, int i){
+	int largest = i;
+	int left = 2*i + 1;
+	int right = 2*i + 2;
+	
+	if(left<N && array[left] > array[largest]){
+		largest = left;
+	}
+	
+	if(right<N && array[right] > array[largest]){
+		largest = right;
+	}
+	
+	if(largest != i){
+		swap(&array[largest], &array[i]);
+		heapify(array, N, largest);
+	}
+}
+
+void heapSort(int* array, int N){
+	shuffle(array, N);
+	printf("before: ");
+	printArray(array, N);
+	
+	int i = N/2 - 1;
+	
+	for(i;i>=0;i--){
+		heapify(array, N, i);
+	}
+	
+	
+	for(i=N-1;i>0;i--){
+		swap(&array[i], &array[0]);
+		heapify(array, i, 0);
+	}
+	
+	printf(" after: ");
+	printArray(array, N);
 }
 
 void doMergeSort(int *array, int N){
@@ -166,7 +212,6 @@ void printArray(int* array, int N){
 }
 
 void shuffle(int array[], int N){
-	srand(time(NULL));
 	int index, temp;
 		
 	int i;

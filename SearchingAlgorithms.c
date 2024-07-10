@@ -13,7 +13,7 @@ void interpolationSearch(int *array, int N, int x);
 
 int main(){
 	int N = 16;
-	int x = 8;
+	int x = 16;
 	int *array = setArray(N);
 	//printArray(array, N);
 	linearSearch(array, N, x);

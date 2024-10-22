@@ -16,7 +16,9 @@ void merge(int *leftArray, int *rightArray, int *array, int N);
 void doMergeSort(int *array, int N);
 void heapify(int* array, int N, int i);
 void heapSort(int* array, int N);
-// quick 
+void doQuickSort(int *array, int N);
+int partition(int* array, int left, int right);
+void quickSort(int* array, int left, int right);
 
 int main(){
 	int N = 10;
@@ -29,9 +31,47 @@ int main(){
 	insertionSort(array, N);
 	doMergeSort(array, N);
 	heapSort(array, N);
+	doQuickSort(array, N);
 	
 	freeArray(array);
 	return 0;
+}
+
+int partition(int* array, int left, int right){
+	int pivot = array[right];
+	int i = left - 1, j;
+
+	for(j=left; j<right; j++){
+		if(array[j] < pivot){
+			i++;
+			swap(&array[i], &array[j]);
+		}
+	}
+	i++;
+	swap(&array[i], &array[right]);
+	
+	return i;
+}
+
+void doQuickSort(int *array, int N){
+	shuffle(array, N);
+	printf("before: ");
+	printArray(array, N);
+	
+	quickSort(array, 0, N-1);
+	
+	printf(" after: ");
+	printArray(array, N);
+}
+
+void quickSort(int* array, int left, int right){
+	if(right <= left)
+		return;
+	
+	int pivot = partition(array, left, right);
+
+	quickSort(array, left, pivot-1); //pivot already in correct place
+	quickSort(array, pivot+1, right);
 }
 
 void heapify(int* array, int N, int i){

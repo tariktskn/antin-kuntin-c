@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <time.h>
 
 typedef struct Point{
@@ -10,8 +11,9 @@ typedef struct Point{
 typedef struct Cell{
 	Point point;
 	struct Cell* parent;
-	int cost;
-	int distance;
+	int f;
+	int g;
+	int h;
 }Cell;
 
 
@@ -63,7 +65,7 @@ void swap(Cell** x, Cell** y){
 void heapifyBackwards(Cell** priorityQueue, int size, int idx){
 	int parent = (idx-1) / 2;
 	
-	if(parent >= 0 && (priorityQueue[idx]->distance < priorityQueue[parent]->distance)){
+	if(parent >= 0 && (priorityQueue[idx]->f < priorityQueue[parent]->f)){
 		swap(&priorityQueue[idx], &priorityQueue[parent]);
 		heapifyBackwards(priorityQueue, size, parent);
 	}
@@ -80,10 +82,10 @@ void heapify(Cell** priorityQueue, int size, int idx) {
 	int left = 2*idx + 1;
 	int right = 2*idx + 2;
 	
-	if(left < size && priorityQueue[left]->distance < priorityQueue[min]->distance)
+	if(left < size && priorityQueue[left]->f < priorityQueue[min]->f)
 		min = left;
 	
-	if(right < size && priorityQueue[right]->distance < priorityQueue[min]->distance)
+	if(right < size && priorityQueue[right]->f < priorityQueue[min]->f)
 		min = right;
 	
 	if(min != idx) {
@@ -119,9 +121,16 @@ Cell** initializePriorityQueue(int capacity) {
 	return priorityQueue;
 }
 
+/*
 int calculateDistance(Point point, Point dest) {
 	return (point.x - dest.x) * (point.x - dest.x) + (point.y - dest.y) * (point.y - dest.y);
 }
+*/
+
+int calculateDistance(Point point, Point dest) {
+	return abs(point.x - dest.x) + abs(point.y - dest.y);
+}
+
 
 void printGrid(int** grid, int n, int m) {
 	int i, j;
@@ -140,18 +149,26 @@ void printGrid(int** grid, int n, int m) {
 	printf("\n");
 }
 
-Cell* createCell(Point point, Cell* parent, int cost, int distance) {
+Cell* createCell(Point point, Cell* parent, int g, int h) {
 	Cell* cell = (Cell*) malloc(sizeof(Cell));
 	cell->point = point;
 	cell->parent = parent;
-	cell->cost = cost;
-	cell->distance = distance;
+	cell->g = g;
+	cell->h = h;
+	cell->f = g + h;
 	return cell;
+}
+
+int isEqual(Point p, Point c) {
+	if (p.x != c.x || p.y != c.y)
+		return 0;
+	return 1;
 }
 
 void aStar(int** matrix, int n, int m, Point src, Point dest) {
 	int** visited = createMatrix(n, m); // 0 -> unvisited
 	Cell** priorityQueue = initializePriorityQueue(n * m);
+	
 	int size = 0, i, found = 0;
 	
 	if (!isValid(src, n, m) || !isValid(dest, n, m)) {
@@ -159,18 +176,19 @@ void aStar(int** matrix, int n, int m, Point src, Point dest) {
 		return;
 	}
 	
-	Cell* start = createCell(src, NULL, 0, 0);
+	Cell* start = createCell(src, NULL, 0, calculateDistance(src, dest));
 	insert(priorityQueue, &size, start);
 	
 	int dx[] = {0, 0, 1, 1, 1, -1, -1, -1};
-	int dy[] = {1, -1, 1, 0, -1, 1, 0, -1,};
+	int dy[] = {1, -1, 1, 0, -1, 1, 0, -1};
 	
 	while(size != 0 && found == 0) {
 		Cell* cur = pop(priorityQueue, &size);
-		//printf("x: %d, y: %d\n", cur->point.x, cur->point.y);
+		//printf("x: %d, y: %d, cost:%d\n", cur->point.x, cur->point.y, cur->f);
 		
 		if (cur->point.x == dest.x && cur->point.y == dest.y) {
 			printf("Destination found!\n");
+			printf("Cost: %d\n", cur->g);
 			found = 1;
 			
 			while(cur != NULL) {
@@ -181,10 +199,11 @@ void aStar(int** matrix, int n, int m, Point src, Point dest) {
 		} else {
 			for (i = 0; i < 8; ++i) {
 				Point p = {cur->point.x + dx[i], cur->point.y + dy[i]};
-				if (isValid(p, n, m) && matrix[p.x][p.y] == 0 && visited[p.x][p.y] == 0) {
-					Cell* c = createCell(p, cur, 0, calculateDistance(p, dest));
+				int tentative_g = cur->g + 1;
+				if (isValid(p, n, m) && matrix[p.x][p.y] == 0 && (visited[p.x][p.y] == 0 || tentative_g < visited[p.x][p.y])) {
+					Cell* c = createCell(p, cur, tentative_g, calculateDistance(p, dest));
 					insert(priorityQueue, &size, c);
-					visited[p.x][p.y] = 1;
+					visited[p.x][p.y] = tentative_g;
 				}
 			}
 		}
@@ -192,9 +211,58 @@ void aStar(int** matrix, int n, int m, Point src, Point dest) {
 	printf("Destination not found!\n");
 }
 
+void simulate() {
+	int n = 9, m = 12;
+	int matrix[9][12] = {
+		{0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0},
+		{0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0},
+		{0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0},
+		{0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0},
+		{0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0},
+		{1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0},
+		{0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0},
+		{0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0},
+		{0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0}
+	};
+	
+	int** grid = createMatrix(n, m);
+	int i, j;
+	for (i = 0; i < n; i++)
+	    for (j = 0; j < m; j++)
+	        grid[i][j] = matrix[i][j];
+	int x1, x2, y1, y2;
+	
+	do {
+		x1 = rand() % n;
+		x2 = rand() % n;
+		y1 = rand() % m;
+		y2 = rand() % m;
+	} while(grid[x1][y1] != 0 || grid[x2][y2] != 0);
+	
+	printf("x1: %2d, y1: %2d, x2: %2d, y2: %2d  ->  ", x1, y1, x2, y2);
+	
+	Point src = {x1, y1};
+	Point dest = {x2, y2};
+	/*
+	Point src = {3, 11};
+	Point dest = {2, 2};
+	*/
+	aStar(grid, n, m, src, dest);
+	printGrid(grid, n, m);
+	
+	freeMatrix(&grid, n, m);
+}
+
 int main(){
 	srand(time(NULL));
 	
+	int i;
+	
+	for (i = 0; i < 5; ++i) {
+		simulate();
+	}	
+	
+	/*
 	int n = 15, m = 15;
 	int** matrix = createGrid(n, m);
 	printGrid(matrix, n, m);
@@ -220,6 +288,8 @@ int main(){
 	}
 	
 	freeMatrix(&matrix, n, m);
+	*/
+	
 	return 0;
 }
 

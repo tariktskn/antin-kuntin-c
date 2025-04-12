@@ -43,10 +43,11 @@ void hashPrint(struct Hash* hash){
     printf("\n");
 }
 
-void hashFree(struct Hash* hash){
-    free(hash->key);
-    free(hash->val);
-    free(hash);
+void hashFree(struct Hash** hash){
+    free((*hash)->key);
+    free((*hash)->val);
+    free(*hash);
+    *hash = NULL;
 }
 
 int main(){
@@ -58,7 +59,7 @@ int main(){
 	}
 	
 	hashPrint(hash);
-	hashFree(hash);
+	hashFree(&hash);
 	
 	return 0;
 }

@@ -3,6 +3,9 @@
 #include <math.h>
 #include <time.h>
 
+#define WALLRATE 30
+#define MAXGRIDSIZE 16
+
 typedef struct Point{
 	int x;
 	int y;
@@ -28,21 +31,20 @@ int** createMatrix(int n, int m) {
 	return matrix;
 }
 
-int** createGrid(int n, int m) {
+int** createGrid(int n, int m, int wallRate) {
 	int** grid = (int**) malloc(n * sizeof(int*));
 	int i, j;
 	
 	for (i = 0; i < n; ++i) {
 		grid[i] = (int*) calloc(m, sizeof(int));
 		for (j = 0; j < m; ++j) {
-			if (rand() % 100 < 20)
+			if (rand() % 100 < wallRate)
 				grid[i][j] = 1;
 		}
 	}
 	
 	return grid;
 }
-
 
 void freeMatrix(int*** matrix, int n, int m) {
 	int** temp = *matrix;
@@ -102,14 +104,6 @@ Cell* pop(Cell** priorityQueue, int *size){
 	return popped;
 }
 
-void printArray(int* array, int N){
-	int i;
-	for(i=0;i<N;i++){
-		printf("%d ", array[i]);
-	}
-	printf("\n");
-}
-
 int isValid(Point point, int n, int m) {
 	if (point.x < 0 || point.y < 0 || point.x >= n || point.y >= m)
 		return 0;
@@ -135,7 +129,9 @@ int calculateDistance(Point point, Point dest) {
 void printGrid(int** grid, int n, int m) {
 	int i, j;
 	
+	printf("+%.*s+\n", m << 1, "----------------------------------------");
 	for(i = 0; i < n; ++i) {
+		printf("|");
 		for(j = 0; j < m; ++j) {
 			if (grid[i][j] == 1)
 				printf("o ", grid[i][j]);
@@ -144,9 +140,9 @@ void printGrid(int** grid, int n, int m) {
 			else
 				printf("  ");
 		}
-		printf("\n");
+		printf("|\n");
 	}
-	printf("\n");
+	printf("+%.*s+\n\n", m << 1, "----------------------------------------");
 }
 
 Cell* createCell(Point point, Cell* parent, int g, int h) {
@@ -184,7 +180,6 @@ void aStar(int** matrix, int n, int m, Point src, Point dest) {
 	
 	while(size != 0 && found == 0) {
 		Cell* cur = pop(priorityQueue, &size);
-		//printf("x: %d, y: %d, cost:%d\n", cur->point.x, cur->point.y, cur->f);
 		
 		if (cur->point.x == dest.x && cur->point.y == dest.y) {
 			printf("Destination found!\n");
@@ -212,25 +207,10 @@ void aStar(int** matrix, int n, int m, Point src, Point dest) {
 }
 
 void simulate() {
-	int n = 9, m = 12;
-	int matrix[9][12] = {
-		{0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0},
-		{0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0},
-		{0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0},
-		{0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0},
-		{0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0},
-		{1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0},
-		{0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0},
-		{0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0},
-		{0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0}
-	};
-	
-	int** grid = createMatrix(n, m);
-	int i, j;
-	for (i = 0; i < n; i++)
-	    for (j = 0; j < m; j++)
-	        grid[i][j] = matrix[i][j];
+	int n = rand() % MAXGRIDSIZE + 1;
+	int m = rand() % MAXGRIDSIZE + 1;
 	int x1, x2, y1, y2;
+	int** grid = createGrid(n, m, WALLRATE);
 	
 	do {
 		x1 = rand() % n;
@@ -239,14 +219,11 @@ void simulate() {
 		y2 = rand() % m;
 	} while(grid[x1][y1] != 0 || grid[x2][y2] != 0);
 	
-	printf("x1: %2d, y1: %2d, x2: %2d, y2: %2d  ->  ", x1, y1, x2, y2);
+	printf("x1: %2d, y1: %2d | x2: %2d, y2: %2d  ->  ", x1, y1, x2, y2);
 	
 	Point src = {x1, y1};
 	Point dest = {x2, y2};
-	/*
-	Point src = {3, 11};
-	Point dest = {2, 2};
-	*/
+
 	aStar(grid, n, m, src, dest);
 	printGrid(grid, n, m);
 	
@@ -256,39 +233,10 @@ void simulate() {
 int main(){
 	srand(time(NULL));
 	
-	int i;
-	
+	int i;	
 	for (i = 0; i < 5; ++i) {
 		simulate();
 	}	
-	
-	/*
-	int n = 15, m = 15;
-	int** matrix = createGrid(n, m);
-	printGrid(matrix, n, m);
-	
-	Point src = {0, 0};
-	Point dest = {14, 10};
-	
-	aStar(matrix, n, m, src, dest);
-	
-	printGrid(matrix, n, m);
-	
-	int i = 0;
-	for(i = 0; i < 15; ++i) {
-		int x1 = rand() % 15;
-		int x2 = rand() % 15;
-		int y1 = rand() % 15;
-		int y2 = rand() % 15;
-		printf("x1: %2d, y1: %2d, x2: %2d, y2: %2d  ->  ", x1, y1, x2, y2);
-		
-		Point src = {x1, y1};
-		Point dest = {x2, y2};
-		aStar(matrix, n, m, src, dest);
-	}
-	
-	freeMatrix(&matrix, n, m);
-	*/
 	
 	return 0;
 }
